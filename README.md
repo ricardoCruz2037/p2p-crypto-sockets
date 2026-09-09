@@ -65,6 +65,6 @@ The application features an interactive menu to act as either the **Sender (Clie
 * **V3.0:** Integration of industry-standard AES (Advanced Encryption Standard) block ciphers using the cryptography library for modern security compliance.
   
 ## 👨‍💻 Author
-**Richard**
+**Richard**     
 Information and Communications Technology Engineering Student
 Focusing on NetDevOps, Cloud Infrastructure, and Network Security.
