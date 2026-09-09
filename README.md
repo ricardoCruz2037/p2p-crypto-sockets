@@ -61,9 +61,9 @@ The application features an interactive menu to act as either the **Sender (Clie
 ## 🗺️ Roadmap & Future Versions
 
 * **V1.1 (Current):** Concept validation, pure Python socket implementation across local Linux/Windows environments.
-* **V2.0:** Migration from standard Wi-Fi testing to isolated VLANs using physical routing infrastructure (e.g., Cisco routers), implementing ACLs to filter the application's traffic.
-* **V3.0:** Integration of industry-standard AES (Advanced Encryption Standard) block ciphers using the cryptography library for modern security compliance.
-  
+* **V2.0:** Corrections, optimizations, and testing in the calculus and the performance of the app. 
+* **V3.0:** Interactive GUI for every feature.
+
 ## 👨‍💻 Author
 **Richard**     
 Information and Communications Technology Engineering Student
