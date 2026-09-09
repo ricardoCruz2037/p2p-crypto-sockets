@@ -45,5 +45,27 @@ The application features an interactive menu to act as either the **Sender (Clie
 ### Execution
 1. Clone the repository to both machines.
    ```bash
-   git clone [https://github.com/yourusername/p2p-crypto-sockets.git](https://github.com/yourusername/p2p-crypto-sockets.git)
+   git clone [https://github.com/ricardoCruz2037/p2p-crypto-sockets.git](https://github.com/ricardoCruz2037/p2p-crypto-sockets.git)
    cd p2p-crypto-sockets
+    ```
+2. On the Receiving Machine:
+    Run the script and select option 2.
+   ```bash
+    python p2p.py
+   ```
+   Note the Local IP address displayed in the terminal.
+
+3. On the Sending Machine:
+    Run the script, select option 1, and enter the Receiver's IP address when prompted.
+
+## 🗺️ Roadmap & Future Versions
+
+    * **V1.1 (Current):** Concept validation, pure Python socket implementation across local Linux/Windows environments.
+
+    * **V2.0:** Migration from standard Wi-Fi testing to isolated VLANs using physical routing infrastructure (e.g., Cisco routers), implementing ACLs to filter the application's traffic.
+
+    * **V3.0:** Integration of industry-standard AES (Advanced Encryption Standard) block ciphers using the cryptography library for modern security compliance.
+4. 👨‍💻 Author
+    Richard
+    Information and Communications Technology Engineering Student
+    Focusing on NetDevOps, Cloud Infrastructure, and Network Security.
