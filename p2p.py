@@ -3,10 +3,11 @@ import json
 import re
 
 # ==========================================
-# FUNCIONES DE VALIDACIÓN Y CONTROL
+# VALIDATION AND CONTROL FUNCTIONS
 # ==========================================
 
-def obtener_ip_local():
+def get_local_ip():
+    """Obtains the real local IP of the network interface."""
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
         s.connect(('10.255.255.255', 1))
@@ -17,319 +18,330 @@ def obtener_ip_local():
         s.close()
     return ip
 
-def validar_ip(ip):
-    patron = r"^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$"
-    if re.match(patron, ip):
-        return all(0 <= int(p) <= 255 for p in ip.split('.'))
+def validate_ip(ip_address):
+    """Verifies that the entered string is a valid IPv4 address."""
+    pattern = r"^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$"
+    if re.match(pattern, ip_address):
+        return all(0 <= int(octet) <= 255 for octet in ip_address.split('.'))
     return False
 
-def pedir_entero(mensaje):
+def request_integer(prompt_message):
+    """Ensures the user strictly enters an integer."""
     while True:
         try:
-            return int(input(mensaje))
+            return int(input(prompt_message))
         except ValueError:
-            print("[!] Error: Entrada no válida. Debes ingresar un número entero.")
+            print("[!] Error: Invalid input. You must enter an integer.")
 
-def pedir_texto_alfabetico(mensaje, permitir_espacios=True):
+def request_alphabetic_text(prompt_message, allow_spaces=True):
+    """Ensures the entered text does not contain numbers or special characters."""
     while True:
-        texto = input(mensaje)
-        check = texto.replace(" ", "") if permitir_espacios else texto
-        if check.isalpha():
-            return texto
-        print("[!] Error: Formato estricto. Solo se permiten letras (sin números ni símbolos).")
+        text = input(prompt_message)
+        # Check by temporarily removing spaces if they are allowed
+        check_text = text.replace(" ", "") if allow_spaces else text
+        if check_text.isalpha():
+            return text
+        print("[!] Error: Strict format. Only letters are allowed (no numbers or symbols).")
 
 # ==========================================
-# ALGORITMOS MATEMÁTICOS
+# MATHEMATICAL ALGORITHMS
 # ==========================================
 
-def cifrado_cesar(texto, desplazamiento, modo="cifrar"):
-    resultado = ""
-    if modo == "descifrar":
-        desplazamiento = -desplazamiento
-    for caracter in texto:
-        if caracter.isalpha():
-            ascii_offset = 65 if caracter.isupper() else 97
-            nuevo_caracter = chr((ord(caracter) - ascii_offset + desplazamiento) % 26 + ascii_offset)
-            resultado += nuevo_caracter
+def caesar_cipher(text, shift, mode="encrypt"):
+    result = ""
+    if mode == "decrypt":
+        shift = -shift
+        
+    for character in text:
+        if character.isalpha():
+            ascii_offset = 65 if character.isupper() else 97
+            new_character = chr((ord(character) - ascii_offset + shift) % 26 + ascii_offset)
+            result += new_character
         else:
-            resultado += caracter
-    return resultado
+            result += character
+    return result
 
-def cifrado_vigenere(texto, clave, modo="cifrar"):
-    resultado = ""
-    clave = clave.upper()
-    indice_clave = 0
-    for caracter in texto:
-        if caracter.isalpha():
-            ascii_offset = 65 if caracter.isupper() else 97
-            desplazamiento = ord(clave[indice_clave % len(clave)]) - 65
-            if modo == "descifrar":
-                desplazamiento = -desplazamiento
-            nuevo_caracter = chr((ord(caracter) - ascii_offset + desplazamiento) % 26 + ascii_offset)
-            resultado += nuevo_caracter
-            indice_clave += 1
+def vigenere_cipher(text, key, mode="encrypt"):
+    result = ""
+    key = key.upper()
+    key_index = 0
+    
+    for character in text:
+        if character.isalpha():
+            ascii_offset = 65 if character.isupper() else 97
+            shift = ord(key[key_index % len(key)]) - 65
+            if mode == "decrypt":
+                shift = -shift
+            new_character = chr((ord(character) - ascii_offset + shift) % 26 + ascii_offset)
+            result += new_character
+            key_index += 1
         else:
-            resultado += caracter
-    return resultado
+            result += character
+    return result
 
-def procesar_vernam_char(letra, clave_binaria):
-    indice_letra = ord(letra.upper()) - 65
-    entero_clave = int(clave_binaria, 2)
-    resultado_xor = indice_letra ^ entero_clave
+def process_vernam_char(letter, binary_key):
+    letter_index = ord(letter.upper()) - 65
+    key_integer = int(binary_key, 2)
+    xor_result = letter_index ^ key_integer
+    
     return {
-        "binario_original": format(indice_letra, '05b'),
-        "binario_xor": format(resultado_xor, '05b'),
-        "decimal": resultado_xor,
-        "letra_final": chr((resultado_xor % 26) + 65)
+        "original_binary": format(letter_index, '05b'),
+        "xor_binary": format(xor_result, '05b'),
+        "decimal": xor_result,
+        "final_letter": chr((xor_result % 26) + 65)
     }
 
 # ==========================================
-# LÓGICA DE RED: EMISOR (CLIENTE)
+# NETWORK LOGIC: SENDER (CLIENT)
 # ==========================================
 
-def modo_emisor(ip_destino, puerto):
-    print(f"\n[+] Iniciando Emisor... Intentando conectar con {ip_destino}:{puerto}")
+def sender_mode(target_ip, port):
+    print(f"\n[+] Starting Sender... Attempting to connect to {target_ip}:{port}")
     try:
-        cliente = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        cliente.connect((ip_destino, puerto))
-        print(f"[EXITO] Sesión TCP persistente establecida.")
+        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client.connect((target_ip, port))
+        print(f"[SUCCESS] Persistent TCP session established.")
         
         while True:
             print("\n" + "-"*35)
-            print(" [1] Selecciona la operación a realizar:")
-            print("    A) Cifrado César")
-            print("    B) Cifrado Vigenère")
-            print("    C) Cifrado Vernam (1 Letra / XOR)")
-            print("    D) Intercambio de Llaves (Diffie-Hellman)")
-            print("    E) Cifrado Asimétrico (RSA Text-book)")
-            print("    S) Finalizar sesión y desconectar")
+            print(" [1] Select operation to perform:")
+            print("    A) Caesar Cipher")
+            print("    B) Vigenère Cipher")
+            print("    C) Vernam Cipher (1 Letter / XOR)")
+            print("    D) Key Exchange (Diffie-Hellman)")
+            print("    E) Asymmetric Cipher (RSA Textbook)")
+            print("    S) End session and disconnect")
             print("-" * 35)
-            opcion_alg = input("Opción: ").upper()
+            algorithm_option = input("Option: ").upper()
             
             payload = {}
             
-            if opcion_alg == 'S':
-                print("[INFO] Cerrando la sesión TCP de forma segura...")
-                cliente.send(json.dumps({"algoritmo": "SALIR"}).encode('utf-8'))
-                break
+            if algorithm_option == 'S':
+                print("[INFO] Closing TCP session safely...")
+                client.send(json.dumps({"algorithm": "EXIT"}).encode('utf-8'))
+                break 
                 
-            elif opcion_alg not in ['A', 'B', 'C', 'D', 'E']:
-                print("[!] Opción no válida. Inténtalo de nuevo.")
-                continue
+            elif algorithm_option not in ['A', 'B', 'C', 'D', 'E']:
+                print("[!] Invalid option. Try again.")
+                continue 
             
-            if opcion_alg in ['A', 'B']:
-                mensaje_plano = pedir_texto_alfabetico("[2] Ingresa el mensaje en texto plano: ")
-                if opcion_alg == 'A':
-                    desplazamiento = pedir_entero("[3] Ingresa la clave numérica (desplazamiento): ")
-                    payload = {"algoritmo": "CESAR", "datos": cifrado_cesar(mensaje_plano, desplazamiento)}
+            if algorithm_option in ['A', 'B']:
+                plaintext = request_alphabetic_text("[2] Enter plaintext message: ")
+                if algorithm_option == 'A':
+                    shift = request_integer("[3] Enter numeric shift key: ")
+                    payload = {"algorithm": "CAESAR", "data": caesar_cipher(plaintext, shift)}
                 else:
-                    clave_texto = pedir_texto_alfabetico("[3] Ingresa la palabra clave (ej. SECRETO): ", permitir_espacios=False)
-                    payload = {"algoritmo": "VIGENERE", "datos": cifrado_vigenere(mensaje_plano, clave_texto)}
+                    text_key = request_alphabetic_text("[3] Enter keyword: ", allow_spaces=False)
+                    payload = {"algorithm": "VIGENERE", "data": vigenere_cipher(plaintext, text_key)}
                     
-            elif opcion_alg == 'C':
-                letra_plana = pedir_texto_alfabetico("[2] Ingresa UNA sola letra (ej. T): ", permitir_espacios=False).upper()
-                while len(letra_plana) != 1:
-                    print("Error. Ingresa exactamente UNA letra.")
-                    letra_plana = pedir_texto_alfabetico("Letra: ", permitir_espacios=False).upper()
+            elif algorithm_option == 'C':
+                plaintext_letter = request_alphabetic_text("[2] Enter ONE single letter: ", allow_spaces=False).upper()
+                while len(plaintext_letter) != 1:
+                    print("Error. Enter exactly ONE letter.")
+                    plaintext_letter = request_alphabetic_text("Letter: ", allow_spaces=False).upper()
                     
-                clave_bin = input("[3] Ingresa clave binaria de 5 bits (ej. 01010): ")
-                while len(clave_bin) != 5 or not all(c in '01' for c in clave_bin):
-                    clave_bin = input("Error. Ingresa exactamente 5 bits (0 y 1): ")
+                binary_key = input("[3] Enter 5-bit binary key: ")
+                while len(binary_key) != 5 or not all(c in '01' for c in binary_key):
+                    binary_key = input("Error. Enter exactly 5 bits (0 and 1): ")
                     
-                payload = {"algoritmo": "VERNAM", "datos": procesar_vernam_char(letra_plana, clave_bin)}
+                payload = {"algorithm": "VERNAM", "data": process_vernam_char(plaintext_letter, binary_key)}
                 
-            elif opcion_alg == 'D':
+            elif algorithm_option == 'D':
                 print("\n--- Diffie-Hellman ---")
-                P = pedir_entero("Ingresa el número primo público (P): ")
-                G = pedir_entero("Ingresa la base pública (G): ")
-                a = pedir_entero("Ingresa tu clave privada secreta (a): ")
-                payload = {"algoritmo": "DIFFIE", "P": P, "G": G, "llave_publica_A": pow(G, a, P)}
+                public_p = request_integer("[2] Enter public prime number (P): ")
+                public_g = request_integer("[3] Enter public base (G): ")
+                private_a = request_integer("[4] Enter your private secret key (a): ")
+                payload = {"algorithm": "DIFFIE", "P": public_p, "G": public_g, "public_key_A": pow(public_g, private_a, public_p)}
                 
-            elif opcion_alg == 'E':
-                cliente.send(json.dumps({"algoritmo": "RSA_REQ"}).encode('utf-8'))
-                print("\n[INFO] Solicitando Llave Pública al Receptor...")
+            elif algorithm_option == 'E':
+                client.send(json.dumps({"algorithm": "RSA_REQ"}).encode('utf-8'))
+                print("\n[INFO] Requesting Public Key from Receiver...")
                 
-                resp_cruda = cliente.recv(1024).decode('utf-8')
-                llaves = json.loads(resp_cruda)
-                e_pub = llaves.get("e")
-                n_pub = llaves.get("n")
-                print(f"[EXITO] Llave Pública recibida desde la red: e={e_pub}, n={n_pub}")
+                raw_response = client.recv(1024).decode('utf-8')
+                keys = json.loads(raw_response)
+                public_e = keys.get("e")
+                public_n = keys.get("n")
+                print(f"[SUCCESS] Public Key received from network: e={public_e}, n={public_n}")
                 
-                mensaje_plano = pedir_texto_alfabetico("\n[2] Ingresa el mensaje en texto plano (ej. YESTERDAY): ")
-                mensaje_cifrado = [pow(ord(char), e_pub, n_pub) for char in mensaje_plano]
-                payload = {"algoritmo": "RSA_DATA", "datos": mensaje_cifrado}
+                plaintext = request_alphabetic_text("\n[2] Enter plaintext message: ")
+                ciphertext = [pow(ord(char), public_e, public_n) for char in plaintext]
+                payload = {"algorithm": "RSA_DATA", "data": ciphertext}
                 
+            # General payload transmission
             if payload:
-                bytes_enviados = cliente.send(json.dumps(payload).encode('utf-8'))
-                print(f"\n[INFO] Transmisión de datos completada. ({bytes_enviados} bytes)")
+                sent_bytes = client.send(json.dumps(payload).encode('utf-8'))
+                print(f"\n[INFO] Data transmission completed. ({sent_bytes} bytes)")
                 
-                if opcion_alg == 'D':
-                    print("[INFO] Esperando respuesta del receptor (Llave B)...")
-                    respuesta = json.loads(cliente.recv(1024).decode('utf-8'))
-                    B = respuesta.get("llave_publica_B")
-                    print(f"[EXITO] Llave pública 'B' recibida: {B}")
-                    secreto_compartido = pow(B, a, P)
+                if algorithm_option == 'D':
+                    print("[INFO] Waiting for receiver's response (Key B)...")
+                    response = json.loads(client.recv(1024).decode('utf-8'))
+                    public_b = response.get("public_key_B")
+                    print(f"[SUCCESS] Public key 'B' received: {public_b}")
+                    shared_secret = pow(public_b, private_a, public_p)
                     print(f"\n" + "*"*45)
-                    print(f" [!] SECRETO COMPARTIDO CALCULADO: {secreto_compartido} [!]")
+                    print(f" [!] CALCULATED SHARED SECRET: {shared_secret} [!]")
                     print("*"*45 + "\n")
                     
-        cliente.close()
-        print("[EXITO] Emisor desconectado correctamente.")
+        client.close()
+        print("[SUCCESS] Sender disconnected successfully.")
     except Exception as e:
-        print(f"\n[ERROR] Ocurrió un problema de red: {e}")
+        print(f"\n[ERROR] A network issue occurred: {e}")
 
 # ==========================================
-# LÓGICA DE RED: RECEPTOR (SERVIDOR)
+# NETWORK LOGIC: RECEIVER (SERVER)
 # ==========================================
 
-def modo_receptor(puerto):
-    ip_local = obtener_ip_local()
-    print(f"\n[+] Iniciando Receptor en {ip_local}:{puerto}...")
+def receiver_mode(port):
+    local_ip = get_local_ip()
+    print(f"\n[+] Starting Receiver at {local_ip}:{port}...")
     
     try:
-        servidor = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         
-        # [CORRECCIÓN] Configuración SO_REUSEADDR para evitar el error 'Address already in use' (TIME_WAIT)
-        servidor.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        # [FIX] SO_REUSEADDR configuration to prevent 'Address already in use' (TIME_WAIT) error
+        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         
-        servidor.bind(('0.0.0.0', puerto)) 
-        servidor.listen(1) 
+        server.bind(('0.0.0.0', port)) 
+        server.listen(1) 
         
-        print("[INFO] Esperando conexión entrante...")
-        conexion, direccion = servidor.accept() 
-        print(f"\n[EXITO] Conexión activa iniciada desde {direccion[0]}:{direccion[1]}")
+        print("[INFO] Waiting for incoming connection...")
+        connection, address = server.accept() 
+        print(f"\n[SUCCESS] Active connection initiated from {address[0]}:{address[1]}")
         
         while True:
-            datos_crudos = conexion.recv(4096).decode('utf-8')
+            raw_data = connection.recv(4096).decode('utf-8')
             
-            if not datos_crudos:
-                print("\n[!] La conexión fue interrumpida inesperadamente por el emisor.")
+            if not raw_data:
+                print("\n[!] Connection was unexpectedly interrupted by the sender.")
                 break
                 
-            paquete = json.loads(datos_crudos)
-            algoritmo_usado = paquete.get("algoritmo")
+            packet = json.loads(raw_data)
+            used_algorithm = packet.get("algorithm")
             
-            if algoritmo_usado == "SALIR":
-                print("\n[INFO] El emisor ha solicitado cerrar la sesión. Desconectando...")
+            if used_algorithm == "EXIT":
+                print("\n[INFO] Sender requested to close the session. Disconnecting...")
                 break
                 
-            print(f"\n--- PAQUETE RECIBIDO ---")
-            print(f"[ALGORITMO DETECTADO]: {algoritmo_usado}")
+            print(f"\n--- RECEIVED PACKET ---")
+            print(f"[ALGORITHM DETECTED]: {used_algorithm}")
             
-            if algoritmo_usado == "RSA_REQ":
-                print("\n[!] El Emisor solicita iniciar una sesión RSA.")
-                p = pedir_entero("Ingresa el número primo 'p' (ej. 17): ")
-                q = pedir_entero("Ingresa el número primo 'q' (ej. 31): ")
-                n = p * q
-                phi = (p - 1) * (q - 1)
-                print(f" -> Valor Phi (φ) calculado: {phi}")
+            # --- RSA Flow ---
+            if used_algorithm == "RSA_REQ":
+                print("\n[!] Sender requests to start an RSA session.")
+                prime_p = request_integer("[1] Enter prime number 'p': ")
+                prime_q = request_integer("[2] Enter prime number 'q': ")
+                modulus_n = prime_p * prime_q
+                phi = (prime_p - 1) * (prime_q - 1)
+                print(f" -> Calculated Euler's Totient (φ): {phi}")
                 
-                e = pedir_entero(f"Ingresa el exponente público 'e' (coprimo de {phi}, ej. 7): ")
-                d = pow(e, -1, phi) 
-                print(f" -> Tu Llave Privada generada es (d): {d}")
+                public_e = request_integer(f"[3] Enter public exponent 'e' (coprime to {phi}): ")
+                private_d = pow(public_e, -1, phi) 
+                print(f" -> Your generated Private Key (d) is: {private_d}")
                 
-                conexion.send(json.dumps({"e": e, "n": n}).encode('utf-8'))
-                print("[INFO] Llave Pública enviada. Esperando matriz de datos cifrados...")
+                connection.send(json.dumps({"e": public_e, "n": modulus_n}).encode('utf-8'))
+                print("[INFO] Public Key sent. Waiting for encrypted data matrix...")
                 
-                paquete_datos = json.loads(conexion.recv(4096).decode('utf-8'))
-                datos_recibidos = paquete_datos.get("datos")
+                data_packet = json.loads(connection.recv(4096).decode('utf-8'))
+                received_data = data_packet.get("data")
                 
-                print(f"\n[MATRIZ NUMÉRICA CIFRADA RECIBIDA]: {datos_recibidos}")
+                print(f"\n[ENCRYPTED NUMERIC MATRIX RECEIVED]: {received_data}")
                 
-                resp = input("\n¿Deseas descifrar el mensaje? (s/n): ").lower()
-                if resp == 's':
-                    d_intentada = pedir_entero("Ingresa tu exponente privado (d): ")
-                    descifrado_ascii = [pow(num, d_intentada, n) for num in datos_recibidos]
-                    mensaje_descifrado = "".join([chr(num) for num in descifrado_ascii])
-                    print(f"\n[RESULTADO] Mensaje reconstruido: {mensaje_descifrado}")
+                decrypt_response = input("\nDo you want to decrypt the message? (y/n): ").lower()
+                if decrypt_response == 'y':
+                    attempted_d = request_integer("[1] Enter your private exponent (d): ")
+                    ascii_decrypted = [pow(num, attempted_d, modulus_n) for num in received_data]
+                    decrypted_message = "".join([chr(num) for num in ascii_decrypted])
+                    print(f"\n[RESULT] Reconstructed message: {decrypted_message}")
 
-            elif algoritmo_usado == "DIFFIE":
-                P = paquete.get("P")
-                G = paquete.get("G")
-                A = paquete.get("llave_publica_A")
+            # --- Diffie-Hellman Flow ---
+            elif used_algorithm == "DIFFIE":
+                public_p = packet.get("P")
+                public_g = packet.get("G")
+                public_a = packet.get("public_key_A")
                 
-                print(f" -> Parámetros públicos: P={P}, G={G}")
-                print(f" -> Llave pública del Emisor (A) recibida: {A}")
+                print(f" -> Public parameters: P={public_p}, G={public_g}")
+                print(f" -> Sender's public key (A) received: {public_a}")
                 
-                b = pedir_entero("\n[!] Ingresa tu clave privada secreta (b): ")
-                B = pow(G, b, P)
+                private_b = request_integer("\n[1] Enter your private secret key (b): ")
+                public_b = pow(public_g, private_b, public_p)
                 
-                respuesta = {"llave_publica_B": B}
-                conexion.send(json.dumps(respuesta).encode('utf-8'))
-                print(f"[INFO] Tu llave pública 'B' ({B}) ha sido enviada al emisor.")
+                response = {"public_key_B": public_b}
+                connection.send(json.dumps(response).encode('utf-8'))
+                print(f"[INFO] Your public key 'B' ({public_b}) has been sent to the sender.")
                 
-                secreto_compartido = pow(A, b, P)
+                shared_secret = pow(public_a, private_b, public_p)
                 print(f"\n" + "*"*45)
-                print(f" [!] SECRETO COMPARTIDO CALCULADO: {secreto_compartido} [!]")
+                print(f" [!] CALCULATED SHARED SECRET: {shared_secret} [!]")
                 print("*"*45 + "\n")
                 
+            # --- Symmetric Flows (Caesar, Vigenère, Vernam) ---
             else:
-                datos_recibidos = paquete.get("datos")
-                if algoritmo_usado == "VERNAM":
-                    print(f"[MENSAJE CIFRADO]: {datos_recibidos['letra_final']}")
-                    print(f" -> Log de bits (XOR): {datos_recibidos['binario_xor']}")
+                received_data = packet.get("data")
+                if used_algorithm == "VERNAM":
+                    print(f"[ENCRYPTED MESSAGE]: {received_data['final_letter']}")
+                    print(f" -> Bit log (XOR): {received_data['xor_binary']}")
                 else:
-                    print(f"[MENSAJE CIFRADO]: {datos_recibidos}")
+                    print(f"[ENCRYPTED MESSAGE]: {received_data}")
                 
-                resp = input("\n¿Deseas descifrar el mensaje? (s/n): ").lower()
-                if resp == 's':
-                    if algoritmo_usado == "CESAR":
-                        clave_intentada = pedir_entero("Ingresa la clave numérica de desplazamiento: ")
-                        print(f"\n[RESULTADO]: {cifrado_cesar(datos_recibidos, clave_intentada, modo='descifrar')}")
+                decrypt_response = input("\nDo you want to decrypt the message? (y/n): ").lower()
+                if decrypt_response == 'y':
+                    if used_algorithm == "CAESAR":
+                        attempted_key = request_integer("[1] Enter numeric shift key: ")
+                        print(f"\n[RESULT]: {caesar_cipher(received_data, attempted_key, mode='decrypt')}")
                         
-                    elif algoritmo_usado == "VIGENERE":
-                        clave_intentada = pedir_texto_alfabetico("Ingresa la palabra clave: ", permitir_espacios=False)
-                        print(f"\n[RESULTADO]: {cifrado_vigenere(datos_recibidos, clave_intentada, modo='descifrar')}")
+                    elif used_algorithm == "VIGENERE":
+                        attempted_key = request_alphabetic_text("[1] Enter keyword: ", allow_spaces=False)
+                        print(f"\n[RESULT]: {vigenere_cipher(received_data, attempted_key, mode='decrypt')}")
                         
-                    elif algoritmo_usado == "VERNAM":
-                        clave_intentada = input("Ingresa la clave binaria de 5 bits original: ")
-                        resultado = procesar_vernam_char(datos_recibidos['letra_final'], clave_intentada)
-                        print(f"\n[RESULTADO]: Letra original descifrada: {resultado['letra_final']}")
+                    elif used_algorithm == "VERNAM":
+                        attempted_key = input("[1] Enter original 5-bit binary key: ")
+                        result = process_vernam_char(received_data['final_letter'], attempted_key)
+                        print(f"\n[RESULT]: Original decrypted letter: {result['final_letter']}")
                         
-            print("\n[INFO] En espera de nuevas instrucciones del emisor...")
+            print("\n[INFO] Waiting for new instructions from sender...")
         
-        conexion.close()
-        servidor.close()
-        print("[EXITO] Receptor desconectado y puertos liberados.")
+        connection.close()
+        server.close()
+        print("[SUCCESS] Receiver disconnected and ports released.")
     except Exception as e:
-        print(f"\n[ERROR] Ocurrió un problema en el receptor: {e}")
+        print(f"\n[ERROR] An issue occurred in the receiver: {e}")
         try:
-            conexion.close()
+            connection.close()
         except:
             pass
         try:
-            servidor.close()
+            server.close()
         except:
             pass
 
 # ==========================================
-# PUNTO DE ENTRADA PRINCIPAL
+# MAIN ENTRY POINT
 # ==========================================
 
 def main():
     while True: 
         print("\n" + "="*50)
-        print("   HERRAMIENTA P2P: CRIPTOGRAFÍA Y REDES")
+        print("   P2P TOOL: CRYPTOGRAPHY AND NETWORKING")
         print("="*50)
-        rol = input("Selecciona tu rol (1: Emisor, 2: Receptor, 3: Salir): ")
+        role = input("Select your role (1: Sender, 2: Receiver, 3: Exit): ")
         
-        if rol == '1':
+        if role == '1':
             while True:
-                ip = input("Ingresa la IP privada del Receptor: ")
-                if validar_ip(ip):
+                ip_address = input("Enter Receiver's private IP: ")
+                if validate_ip(ip_address):
                     break
-                print("[!] Error: Debes ingresar una IP con formato válido (ej. 192.168.1.10).")
-            modo_emisor(ip, 8080)
+                print("[!] Error: You must enter a valid IP format.")
+            sender_mode(ip_address, 8080)
             
-        elif rol == '2':
-            modo_receptor(8080)
+        elif role == '2':
+            receiver_mode(8080)
             
-        elif rol == '3':
-            print("Cerrando la aplicación. ¡Hasta pronto!")
+        elif role == '3':
+            print("Closing the application. See you later!")
             break
             
         else:
-            print("[!] Opción inválida. Intenta nuevamente.")
+            print("[!] Invalid option. Try again.")
 
 if __name__ == "__main__":
     main()

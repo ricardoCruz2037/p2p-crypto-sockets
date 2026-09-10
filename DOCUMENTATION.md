@@ -16,17 +16,17 @@ The application operates on a Peer-to-Peer (P2P) model using TCP over IPv4.
 * **Socket Configuration:** The receiver implements `SO_REUSEADDR` to bypass the TCP `TIME_WAIT` state. This prevents the `[Errno 98] Address already in use` exception, allowing immediate port rebinding after a session terminates.
 
 ```python
-servidor = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-servidor.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-servidor.bind(('0.0.0.0', 8080))
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+server.bind(('0.0.0.0', port))
 ```
 
 **Data Encapsulation:** Data is transmitted as UTF-8 encoded byte streams structured in JSON format. This simulates a Layer 7 Protocol Data Unit (PDU).
 
 ```json
 {
-  "algoritmo": "CESAR",
-  "datos": "UHG"
+  "algorithm": "CAESAR",
+  "data": "UHG"
 }
 ```
 
@@ -34,7 +34,7 @@ servidor.bind(('0.0.0.0', 8080))
 
 The script `p2p.py` is divided into four main logical blocks:
 
-1. **Validation & Control:** Functions (`validar_ip`, `pedir_entero`, `pedir_texto_alfabetico`) to enforce strict input requirements and prevent runtime exceptions.
+1. **Validation & Control:** Functions (`validate_ip`, `request_integer`, `request_alphabetic_text`) to enforce strict input requirements and prevent runtime exceptions.
 2. **Mathematical Algorithms:** Core cryptographic logic isolated into independent functions.
 3. **Emitter Logic (Client):** Initiates the TCP connection, captures user input, serializes the payload, and manages the transmission state.
 4. **Receiver Logic (Server):** Binds the listening port, deserializes incoming JSON payloads, detects the algorithm flag, and executes decryption.
